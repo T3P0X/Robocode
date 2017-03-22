@@ -23,10 +23,12 @@ public class SupBot extends AdvancedRobot {
         setAdjustRadarForRobotTurn(true);
         setAdjustGunForRobotTurn(true);
         setAdjustRadarForGunTurn(true);
-
+        while (true) {
             turnRadarRight(360);
             scan();
             execute();
+            shoot();
+        }
         }
 
 
@@ -34,6 +36,7 @@ public class SupBot extends AdvancedRobot {
     public void onScannedRobot(ScannedRobotEvent robot) {
 
         while (true) {
+
             if (enemies.size() == 0) {
                 enemy = new AdvancedEnemy(false);
                 enemies.add(enemy);
@@ -43,12 +46,11 @@ public class SupBot extends AdvancedRobot {
             }
 
             // names added in the console
-            for (Enemy enemy1 : enemies) {
-                System.out.println(enemy1.getName());
-                System.out.println(enemies.size());
-            }
-            System.out.println("------------");
-
+//            for (Enemy enemy1 : enemies) {
+//                System.out.println(enemy1.getName());
+//                System.out.println(enemies.size());
+//            }
+//            System.out.println("------------");
 
             double radarTurn = getHeadingRadians() + robot.getBearingRadians() - getRadarHeadingRadians();
             setTurnRadarRightRadians(Utils.normalRelativeAngle(radarTurn));
@@ -56,9 +58,6 @@ public class SupBot extends AdvancedRobot {
             double changeInEnergy = previousEnergy - robot.getEnergy();
             setTurnRight(robot.getBearing() + 90);
             execute();
-
-
-
 
             // strafe ever 10 ticks.
             if (getTime() % 10 == 0) {
@@ -70,7 +69,7 @@ public class SupBot extends AdvancedRobot {
                 movementDirection = -movementDirection;
             setAhead((robot.getDistance() / 4 + 40) * movementDirection);
             {
-                InfoRobot();
+                //InfoRobot();
 
                 // Track the energy level
                 previousEnergy = robot.getEnergy();
@@ -100,7 +99,6 @@ public class SupBot extends AdvancedRobot {
     private boolean enemyIsUnique(String name) {
         boolean ok = true;
         for (Enemy enemy : enemies) {
-            System.out.println("test loop");
             if (name.equals(enemy.getName())) {
                 ok = false;
             }
@@ -122,7 +120,7 @@ public class SupBot extends AdvancedRobot {
         double absDeg = absoluteBearing(getX(), getY(), futureX, futureY);
         setTurnGunRight(normalizeBearing(absDeg - getGunHeading()));
 
-        setFire((3 / (robot.getDistance() / 100)));
+        setFire((3 / (enemy.getDistance() / 100)));
 
         execute();
     }
