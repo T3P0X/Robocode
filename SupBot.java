@@ -1,9 +1,9 @@
 package saxion.Supbot.Robocode;
 
 import robocode.AdvancedRobot;
+import robocode.RobotDeathEvent;
 import robocode.ScannedRobotEvent;
 import robocode.util.Utils;
-
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 
@@ -21,63 +21,79 @@ public class SupBot extends AdvancedRobot {
 
         enemy.resetEnemy();
         setAdjustRadarForRobotTurn(true);
-        setAdjustGunForRobotTurn(true);
-        setAdjustRadarForGunTurn(true);
+
+        turnRadarRight(360);
         while (true) {
             turnRadarRight(360);
             scan();
+
             execute();
-            shoot();
+
         }
         }
 
-
-
-    public void onScannedRobot(ScannedRobotEvent robot) {
-
-        while (true) {
-
-            if (enemies.size() == 0) {
-                enemy = new AdvancedEnemy(false);
-                enemies.add(enemy);
-            } else if (enemyIsUnique(robot.getName())) {
-                enemy = new AdvancedEnemy(false);
-                enemies.add(enemy);
-            }
-
-            // names added in the console
-//            for (Enemy enemy1 : enemies) {
-//                System.out.println(enemy1.getName());
-//                System.out.println(enemies.size());
-//            }
-//            System.out.println("------------");
-
-            double radarTurn = getHeadingRadians() + robot.getBearingRadians() - getRadarHeadingRadians();
-            setTurnRadarRightRadians(Utils.normalRelativeAngle(radarTurn));
-            turnRight(robot.getBearing() + 90 - 30 * movementDirection);
-            double changeInEnergy = previousEnergy - robot.getEnergy();
-            setTurnRight(robot.getBearing() + 90);
-            execute();
-
-            // strafe ever 10 ticks.
-            if (getTime() % 10 == 0) {
-                strafeDirection *= -1;
-                setAhead(150 * strafeDirection);
-            }
-            //dodge bullet by checking energy.
-            if (changeInEnergy > 0 && changeInEnergy <= 3)
-                movementDirection = -movementDirection;
-            setAhead((robot.getDistance() / 4 + 40) * movementDirection);
-            {
-                //InfoRobot();
-
-                // Track the energy level
-                previousEnergy = robot.getEnergy();
-                execute();
-            }
-
+    public void onRobotDeath(RobotDeathEvent robot) {
+        // see if the robot we were tracking died
+        if (robot.getName().equals(enemy.getName())) {
+            enemy.resetEnemy();
         }
     }
+
+    public void onScannedRobot(ScannedRobotEvent robot) {
+//        double moveAmount = Math.max(getBattleFieldWidth(), getBattleFieldHeight());
+//        boolean peek = false;
+        if ( enemy.none() || robot.getDistance() < enemy.getDistance() - 70 ||
+                robot.getName().equals(enemy.getName())) {
+
+            // track him using the NEW update method
+            enemy.updateEnemy(robot , this);
+        }
+
+        double radarTurn = getHeadingRadians() + robot.getBearingRadians() - getRadarHeadingRadians();
+
+        setTurnRadarRightRadians(Utils.normalRelativeAngle(radarTurn));
+
+        // Stay at right angles to the opponent
+        turnRight(robot.getBearing() + 90 - 30 * movementDirection);
+
+        // If the bot has small energy drop,
+        // assume it fired
+        double changeInEnergy = previousEnergy - robot.getEnergy();
+
+        setTurnRight(robot.getBearing() + 90);
+//        System.out.println(robot.getName());
+//        if (robot.getName().equals("sample.Crazy (1)")) {
+//            System.out.println("WOOOHOOW!");
+//        }
+//        else if (robot.getName().equals("sample.Crazy (2)")){
+//            System.out.println("WOOOHOOW2!");
+//        }
+
+        // strafe ever 10 ticks.
+        if (getTime() % 10 == 0) {
+            strafeDirection *= -1;
+            setAhead(150 * strafeDirection);
+        }
+        //dodge bullet by checking energy.
+        if(changeInEnergy >0&& changeInEnergy <=3)
+            movementDirection = -movementDirection;
+        if (robot.getDistance() < 100)
+        {
+            back(100);
+        }
+        setAhead((robot.getDistance() / 4 + 40) * movementDirection);
+        shoot();
+
+
+            // Track the energy level
+            previousEnergy = robot.getEnergy();
+            execute();
+        }
+
+
+
+
+
 
     private void InfoRobot() {
         //All info about our Robot
@@ -111,18 +127,11 @@ public class SupBot extends AdvancedRobot {
 
             return;
         }
-        double firePower = Math.min(500 / enemy.getDistance(), 3);
-        double bulletSpeed = 20 - firePower * 3;
-        long time = (long) (enemy.getDistance() / bulletSpeed);
-
-        double futureX = enemy.getFutureX_axis(time);
-        double futureY = enemy.getFutureY_axis(time);
-        double absDeg = absoluteBearing(getX(), getY(), futureX, futureY);
-        setTurnGunRight(normalizeBearing(absDeg - getGunHeading()));
-
-        setFire((3 / (enemy.getDistance() / 100)));
-
-        execute();
+        double turn = getHeading() - getGunHeading() + enemy.getBearing();
+        // normalize the turn to take the shortest path there
+        setTurnGunRight(normalizeBearing(turn));
+        // shoot!
+        setFire(Math.min(400 / enemy.getDistance(), 3));
     }
 
     private double normalizeBearing(double angle) {

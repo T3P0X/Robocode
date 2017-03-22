@@ -1,5 +1,6 @@
 package saxion.Supbot.Robocode;
 
+import robocode.Robot;
 import robocode.ScannedRobotEvent;
 
 /**
@@ -43,14 +44,15 @@ public class AdvancedEnemy extends Enemy {
         y_axis = 0.0;
     }
 
-    @Override
-    public void updateEnemy(ScannedRobotEvent enemy) {
-        double absBearingDeg = (getHeading() + enemy.getBearing());
-        if (absBearingDeg < 0) absBearingDeg += 360;
+
+    public void updateEnemy(ScannedRobotEvent enemy , Robot robot) {
         super.updateEnemy(enemy);
+        double absBearingDeg = (robot.getGunHeading() + enemy.getBearing());
+        if (absBearingDeg < 0) absBearingDeg += 360;
+
         System.out.println(x_axis);
-        x_axis = getX() + Math.cos(Math.toRadians(absBearingDeg)) * enemy.getDistance();
-        y_axis = getY() + Math.cos(Math.toRadians(absBearingDeg)) * enemy.getDistance();
+        x_axis = robot.getX() + Math.cos(Math.toRadians(absBearingDeg)) * enemy.getDistance();
+        y_axis = robot.getY() + Math.cos(Math.toRadians(absBearingDeg)) * enemy.getDistance();
         System.out.println(x_axis);
     }
 }
